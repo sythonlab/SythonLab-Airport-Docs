@@ -1,0 +1,7 @@
+/build/
+/dist/
+/sythonlab-airport-docs.egg-info/
+/.venv/
+/.idea/
+.idea/*
+.idea
