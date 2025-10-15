@@ -19,8 +19,8 @@ def short_date(date: datetime.date):
     return format(date, '%-d%b%y').upper()
 
 
-def short_date_without_year(date: datetime.date):
-    return format(date, '%-d%b').upper()
+def short_date_without_year(date: datetime.date, data_format: str = '%d%b'):
+    return format(date, data_format).upper()
 
 
 def keep_alphanumeric(input_string):
