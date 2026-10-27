@@ -16,7 +16,8 @@ def normalize_string(string: str, as_upper=False) -> str:
 
 
 def short_date(date: datetime.date):
-    return format(date, '%-d%b%y').upper()
+    """A date as the IATA messages write it: two-digit day, month and year (02FEB00)"""
+    return format(date, '%d%b%y').upper()
 
 
 def short_date_without_year(date: datetime.date, data_format: str = '%d%b'):
@@ -24,4 +25,6 @@ def short_date_without_year(date: datetime.date, data_format: str = '%d%b'):
 
 
 def keep_alphanumeric(input_string):
-    return re.sub(r'[^a-zA-Z0-9 ]', '', input_string)
+    """Only ASCII letters, digits and single spaces; accented letters lose the accent (PEÑA -> PENA), not the letter"""
+    text = re.sub(r'[^a-zA-Z0-9 ]', '', normalize_string(input_string or ''))
+    return ' '.join(text.split())
