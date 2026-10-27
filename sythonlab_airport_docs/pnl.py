@@ -25,11 +25,11 @@ class PNL:
         grouped_list = self.get_grouped()
 
         for index, (destination_code, pax_list) in enumerate(grouped_list.items()):
-            self.lines += self.get_part(index + 1, destination_code, pax_list)
+            self.lines += self.get_part(index + 1, destination_code, pax_list, total_parts=len(grouped_list.keys()))
 
         self.lines += [f'END{self.prefix}']
 
-    def get_part(self, part_number, destination_code, pax_list):
+    def get_part(self, part_number, destination_code, pax_list, *, total_parts=None):
         part = [] if part_number == 1 else ['']
         part += [
             self.get_flight_header(part_number),
@@ -39,7 +39,8 @@ class PNL:
         for pax in pax_list:
             part += [self.get_pax_info(pax), *self.get_doc_line(pax)]
 
-        part += [f'ENDPART{part_number}']
+        if total_parts and total_parts > 1:
+            part += [f'ENDPART{part_number}']
         return part
 
     def get_pax_info(self, pax):

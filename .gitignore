@@ -1,6 +1,8 @@
 /build/
 /dist/
-/sythonlab-airport-docs.egg-info/
+*.egg-info/
+__pycache__/
+*.pyc
 /.venv/
 /.idea/
 .idea/*
