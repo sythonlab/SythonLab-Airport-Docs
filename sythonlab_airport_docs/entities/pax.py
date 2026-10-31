@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple, Union
 
 from .pet import Pet
 
@@ -27,8 +27,8 @@ class Pax:
     An infant travels on the lap of an adult: give it as the `infant` of that adult (and it still goes in the pax
     list, the API lists every passenger).
     Services of the PNL: `checked_bags` / `checked_bags_weight` (kg) its hold baggage (XBAG), `pets` (AVIH / PETC),
-    `vegetarian_meal` (VGML), `special_services` the codes of its assistance services (WCHR, WCHS, WCHC, DPNA) and
-    `checkin_remark` a note for the check-in staff (CKIN).
+    `vegetarian_meal` (VGML), `special_services` its assistance services (WCHR, WCHS, WCHC, DPNA), each a code or a
+    (code, text) pair, and `checkin_remark` a note for the check-in staff (CKIN).
     """
 
     def __init__(self, first_name: str, second_name: Optional[str], last_name: str, gender: str, birth_date: str,
@@ -37,7 +37,7 @@ class Pax:
                  reservation_code: str, ticket_number: str = '', ticket_coupon: int = 1, title: str = '',
                  infant: Optional['Pax'] = None, checked_bags: int = 0, checked_bags_weight: float = 0,
                  pets: Optional[List[Pet]] = None, vegetarian_meal: bool = False,
-                 special_services: Optional[List[str]] = None, checkin_remark: str = ''):
+                 special_services: Optional[List[Union[str, Tuple[str, str]]]] = None, checkin_remark: str = ''):
         self.first_name = clean(first_name)
         self.second_name = clean(second_name)
         self.last_name = clean(last_name)
@@ -60,7 +60,9 @@ class Pax:
         self.checked_bags_weight = checked_bags_weight or 0
         self.pets = pets or []
         self.vegetarian_meal = bool(vegetarian_meal)
-        self.special_services = [clean(code) for code in special_services or [] if clean(code)]
+        # (code, text) of each service, without the empty ones
+        self.special_services = [(clean(code), (text or '').strip()) for code, text in (
+            (item, '') if isinstance(item, str) else item for item in special_services or []) if clean(code)]
         self.checkin_remark = (checkin_remark or '').strip()
 
         self.validate()

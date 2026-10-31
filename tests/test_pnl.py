@@ -40,7 +40,8 @@ class PNLTest(unittest.TestCase):
     def test_services(self):
         entry = pax('CLARA', '', 'STEINEBACH', 'F', '2020-12-11', 'PASSPORT', 'C3JWXZGNT', '2030-01-14', 'YJI7NF',
                     '1362401116722', checked_bags=2, checked_bags_weight=46.0, vegetarian_meal=True,
-                    special_services=['WCHR', 'DPNA'], checkin_remark='Pax carries baby stroller',
+                    special_services=['WCHR', ('DPNA', 'Needs help to the gate')],
+                    checkin_remark='Pax carries baby stroller',
                     pets=[Pet('hold', 'dog', 20, 30, 25, 50, 'comentario'), Pet('cabin', 'cat'),
                           Pet('cabin', 'other', 4)])
         self.assertEqual(lines(entry)[-12:-1], [
@@ -53,7 +54,7 @@ class PNLTest(unittest.TestCase):
             '.R/PETC HK1 OTH/4KG/',
             '.R/VGML HK1',
             '.R/WCHR HK1',
-            '.R/DPNA HK1',
+            '.R/DPNA HK1 NEEDS HELP TO THE GATE',
             '.R/CKIN PAX CARRIES BABY STROLLER',
         ])
 
