@@ -41,14 +41,16 @@ class PNLTest(unittest.TestCase):
         entry = pax('CLARA', '', 'STEINEBACH', 'F', '2020-12-11', 'PASSPORT', 'C3JWXZGNT', '2030-01-14', 'YJI7NF',
                     '1362401116722', checked_bags=2, checked_bags_weight=46.0, vegetarian_meal=True,
                     special_services=['WCHR', 'DPNA'], checkin_remark='Pax carries baby stroller',
-                    pets=[Pet('hold', 'dog', 20, 30, 25, 50, 'comentario'), Pet('cabin', 'cat')])
-        self.assertEqual(lines(entry)[-11:-1], [
+                    pets=[Pet('hold', 'dog', 20, 30, 25, 50, 'comentario'), Pet('cabin', 'cat'),
+                          Pet('cabin', 'other', 4)])
+        self.assertEqual(lines(entry)[-12:-1], [
             '.R/CHLD HK1 11DEC20',
             '.R/DOCS HK1/P/CUB/C3JWXZGNT/CUB/11DEC20/F/14JAN30/STEINEBACH/CLA',
             '.RN/RA',
             '.R/XBAG HK1 TTL 46KG 2PC',
             '.R/AVIH HK1 DOG/30X25X50CM 20KG/COMENTARIO',
             '.R/PETC HK1 CAT//',
+            '.R/PETC HK1 OTH/4KG/',
             '.R/VGML HK1',
             '.R/WCHR HK1',
             '.R/DPNA HK1',
