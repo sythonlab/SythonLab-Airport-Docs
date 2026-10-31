@@ -43,8 +43,9 @@ class PNLTest(unittest.TestCase):
                     special_services=['WCHR', ('DPNA', 'Needs help to the gate')],
                     checkin_remark='Pax carries baby stroller',
                     pets=[Pet('hold', 'dog', 20, 30, 25, 50, 'comentario'), Pet('cabin', 'cat'),
-                          Pet('cabin', 'other', 4)])
-        self.assertEqual(lines(entry)[-12:-1], [
+                          Pet('cabin', 'other', 4), Pet('hold', 'Crocodile', 40, 150, 45, 35, 'bites')])
+        # A pet that is not a dog or a cat goes as OTH, with its name before the comment
+        self.assertEqual(lines(entry)[-13:-1], [
             '.R/CHLD HK1 11DEC20',
             '.R/DOCS HK1/P/CUB/C3JWXZGNT/CUB/11DEC20/F/14JAN30/STEINEBACH/CLA',
             '.RN/RA',
@@ -52,6 +53,7 @@ class PNLTest(unittest.TestCase):
             '.R/AVIH HK1 DOG/30X25X50CM 20KG/COMENTARIO',
             '.R/PETC HK1 CAT//',
             '.R/PETC HK1 OTH/4KG/',
+            '.R/AVIH HK1 OTH/150X45X35CM 40KG/CROCODILE BITES',
             '.R/VGML HK1',
             '.R/WCHR HK1',
             '.R/DPNA HK1 NEEDS HELP TO THE GATE',
