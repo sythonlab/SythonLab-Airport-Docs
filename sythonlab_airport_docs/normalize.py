@@ -16,8 +16,34 @@ def normalize_string(string: str, as_upper=False) -> str:
 
 
 def short_date(date: datetime.date):
-    """A date as the IATA messages write it: two-digit day, month and year (02FEB00)"""
-    return format(date, '%d%b%y').upper()
+    """A date as the IATA messages write it: two-digit day, month and year (02FEB00); empty when missing"""
+    return format(date, '%d%b%y').upper() if date else ''
+
+
+def format_date(date: datetime.date, data_format: str):
+    """A date in `data_format`, empty when missing"""
+    return format(date, data_format) if date else ''
+
+
+# Document type of the travel documents (DOCS / PAXLST): P passport, I identity card. Other names are mapped to these;
+# a one-letter IATA code is kept as it is and any other value leaves the place empty.
+DOCUMENT_TYPES = {
+    'P': 'P', 'PP': 'P', 'PASSPORT': 'P',
+    'I': 'I', 'ID': 'I', 'NI': 'I', 'DNI': 'I', 'IDENTITY CARD': 'I',
+}
+
+
+def document_type_code(document_type: str):
+    value = (document_type or '').strip().upper()
+    return DOCUMENT_TYPES.get(value, value if len(value) == 1 else '')
+
+
+def number(value):
+    """A quantity without a needless decimal part (20.0 -> 20, 20.5 -> 20.5); empty when missing"""
+    if value in (None, ''):
+        return ''
+    value = float(value)
+    return str(int(value)) if value.is_integer() else str(value)
 
 
 def short_date_without_year(date: datetime.date, data_format: str = '%d%b'):

@@ -2,7 +2,7 @@ import io
 from collections import defaultdict
 from typing import List
 
-from .normalize import short_date, short_date_without_year, keep_alphanumeric
+from .normalize import short_date, short_date_without_year, keep_alphanumeric, document_type_code, number
 from .entities import ContactInfo
 from .entities import Pax
 from .entities import Flight
@@ -14,9 +14,11 @@ CONTINUATION = '.RN/'
 
 class PNL:
     """
-    PNL (or ADL) of a flight: per destination, a name record per passenger (`1SURNAME/GIVEN NAMESTITLE`) followed by
-    its booking locator (`.L/`), its tickets (`.R/TKNE`), its child / infant remarks (`.R/CHLD`, `.R/INFT`) and its
-    travel documents (`.R/DOCS`). An infant has no name record of its own: its lines go in those of its adult.
+    PNL (or ADL) of a flight: per destination and booked class, a name record per passenger
+    (`1SURNAME/GIVEN NAMESTITLE`) followed by its booking locator (`.L/`), its tickets (`.R/TKNE`), its child / infant
+    remarks (`.R/CHLD`, `.R/INFT`), its travel documents (`.R/DOCS`) and its services (`.R/XBAG`, `.R/AVIH`,
+    `.R/PETC`, `.R/VGML`, `.R/WCHR`..., `.R/CKIN`). An infant has no name record of its own: its lines go in those of
+    its adult. No value is required: a missing one leaves its place empty (`//`), a service not requested adds no line.
     """
 
     def __init__(self, contact_info: ContactInfo, pax_list: List[Pax], flight: Flight, line_limit: int = LINE_LIMIT,
@@ -59,13 +61,16 @@ class PNL:
 
     def get_part(self, part_number, destination_code, pax_list, *, total_parts=None):
         part = [] if part_number == 1 else ['']
-        part += [
-            self.get_flight_header(part_number),
-            f'-{destination_code}{str(len(pax_list)).zfill(3)}Y'
-        ]
+        part.append(self.get_flight_header(part_number))
 
+        # A destination line per booked class (-HAV002Y), followed by its passengers
+        classes = defaultdict(list)
         for pax in pax_list:
-            part += self.get_pax_lines(pax)
+            classes[pax.flight_class].append(pax)
+        for flight_class, class_pax in classes.items():
+            part.append(f'-{destination_code}{str(len(class_pax)).zfill(3)}{flight_class}')
+            for pax in class_pax:
+                part += self.get_pax_lines(pax)
 
         if total_parts and total_parts > 1:
             part.append(f'ENDPART{part_number}')
@@ -90,7 +95,32 @@ class PNL:
         lines += self.get_doc_lines(pax)
         if infant:
             lines += self.get_doc_lines(infant)
+        lines += self.get_service_lines(pax)
         return lines
+
+    def get_service_lines(self, pax):
+        """The services of a passenger, only those it has: hold baggage, pets, meal, assistance and check-in remark"""
+        lines = []
+        if pax.checked_bags:
+            lines.append(f'.R/XBAG HK1 TTL {number(pax.checked_bags_weight)}KG {pax.checked_bags}PC')
+        for pet in pax.pets:
+            lines += self.split(f'.R/{pet.code} HK1 {self.get_pet_text(pet)}')
+        if pax.vegetarian_meal:
+            lines.append('.R/VGML HK1')
+        for code in pax.special_services:
+            lines.append(f'.R/{code} HK1')
+        if pax.checkin_remark:
+            lines += self.split(f'.R/CKIN {keep_alphanumeric(pax.checkin_remark).upper()}')
+        return lines
+
+    @staticmethod
+    def get_pet_text(pet):
+        """ANIMAL/LENGTHxWIDTHxHEIGHTCM WEIGHTKG/COMMENT, each missing value an empty place"""
+        sizes = [number(size) for size in (pet.length, pet.width, pet.height)]
+        dimensions = f'{"X".join(sizes)}CM' if all(sizes) else ''
+        weight = f'{number(pet.weight)}KG' if number(pet.weight) else ''
+        return f'{keep_alphanumeric(pet.animal)}/{" ".join(filter(None, [dimensions, weight]))}/' \
+               f'{keep_alphanumeric(pet.comment)}'
 
     @staticmethod
     def get_name(pax):
@@ -100,17 +130,22 @@ class PNL:
     def get_name_record(self, pax):
         return f'1{self.get_name(pax)}{keep_alphanumeric(pax.title)}'[:self.line_limit]
 
+    @staticmethod
+    def is_valid_ticket(ticket_number):
+        """A ticket number is written as it is, unless it has fewer than 3 characters besides spaces and dots"""
+        return len(ticket_number.replace(' ', '').replace('.', '')) >= 3
+
     def get_ticket_lines(self, pax, prefix=''):
-        if not pax.ticket_number:
+        if not self.is_valid_ticket(pax.ticket_number):
             return []
         # A ticket number may already end in its coupon (.../2)
         coupon = '' if '/' in pax.ticket_number else f'/{pax.ticket_coupon}'
         return self.split(f'.R/TKNE HK1 {prefix}{pax.ticket_number}{coupon}')
 
     def get_doc_lines(self, pax):
-        gender = pax.gender + ('I' if self.category(pax) == 'INF' else '')
+        gender = pax.gender + ('I' if pax.gender and self.category(pax) == 'INF' else '')
         fields = [
-            'HK1', pax.document_type, pax.document_issuer_code, pax.document_number, pax.nationality_code,
+            'HK1', document_type_code(pax.document_type), pax.document_issuer_code, pax.document_number, pax.nationality_code,
             short_date(pax.birth_date), gender, short_date(pax.document_expiry_date),
             keep_alphanumeric(pax.last_name), keep_alphanumeric(pax.given_names),
         ]
