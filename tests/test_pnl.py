@@ -74,6 +74,17 @@ class PNLTest(unittest.TestCase):
         self.assertIn('.R/TKNE HK1 169.297 81/1', content)
         self.assertIn('.L/123', content)
 
+    def test_nobody_boarding(self):
+        self.assertEqual(lines(), ['PNL', 'CP123/10NOV KIN PART1', 'NIL', 'ENDPNL'])
+
+    def test_a_part_per_destination(self):
+        to_hav = pax('A', '', 'ONE', 'M', '1990-01-01', 'P', 'X1', '2030-01-01', '1')
+        to_geo = Pax('B', '', 'TWO', 'M', '1990-01-01', 'CUB', 'P', 'X2', '2030-01-01', 'CUB', 'Y', 'KIN', 'GEO', '2')
+        content = lines(to_hav, to_geo)
+        self.assertEqual([line for line in content if line.startswith(('-', 'ENDPART')) or 'PART' in line],
+                         ['CP123/10NOV KIN PART1', '-HAV001Y', 'ENDPART1', 'CP123/10NOV KIN PART2', '-GEO001Y',
+                          'ENDPART2'])
+
     def test_a_destination_line_per_class(self):
         economy = pax('A', '', 'ONE', 'M', '1990-01-01', 'P', 'X1', '2030-01-01', '1')
         business = pax('B', '', 'TWO', 'M', '1990-01-01', 'P', 'X2', '2030-01-01', '2', cls='C')

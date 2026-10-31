@@ -57,6 +57,9 @@ class PNL:
         self.lines = [self.prefix]
         for part_number, (destination_code, pax_list) in enumerate(grouped.items(), start=1):
             self.lines += self.get_part(part_number, destination_code, pax_list, total_parts=len(grouped))
+        if not grouped:
+            # Nobody boards at this point (e.g. the stopover of a flight whose passengers all boarded before)
+            self.lines += [self.get_flight_header(1), 'NIL']
         self.lines.append(f'END{self.prefix}')
 
     def get_part(self, part_number, destination_code, pax_list, *, total_parts=None):
