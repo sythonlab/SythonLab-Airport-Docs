@@ -2,7 +2,7 @@ import io
 from collections import defaultdict
 from typing import List
 
-from .normalize import short_date, short_date_without_year, keep_alphanumeric, document_type_code, number
+from .normalize import short_date, short_date_without_year, keep_alphanumeric, number
 from .entities import ContactInfo
 from .entities import Pax
 from .entities import Flight
@@ -122,8 +122,8 @@ class PNL:
         sizes = [number(size) for size in (pet.length, pet.width, pet.height)]
         dimensions = f'{"X".join(sizes)}CM' if all(sizes) else ''
         weight = f'{number(pet.weight)}KG' if number(pet.weight) else ''
-        return f'{keep_alphanumeric(pet.animal)}/{" ".join(filter(None, [dimensions, weight]))}/' \
-               f'{keep_alphanumeric(pet.comment)}'
+        return f'{pet.animal_code}/{" ".join(filter(None, [dimensions, weight]))}/' \
+               f'{keep_alphanumeric(pet.remark)}'
 
     @staticmethod
     def get_name(pax):
@@ -146,9 +146,9 @@ class PNL:
         return self.split(f'.R/TKNE HK1 {prefix}{pax.ticket_number}{coupon}')
 
     def get_doc_lines(self, pax):
-        gender = pax.gender + ('I' if pax.gender and self.category(pax) == 'INF' else '')
+        gender = (pax.gender.code if pax.gender else '') + ('I' if pax.gender and self.category(pax) == 'INF' else '')
         fields = [
-            'HK1', document_type_code(pax.document_type), pax.document_issuer_code, pax.document_number, pax.nationality_code,
+            'HK1', pax.document_type.code if pax.document_type else '', pax.document_issuer_code, pax.document_number, pax.nationality_code,
             short_date(pax.birth_date), gender, short_date(pax.document_expiry_date),
             keep_alphanumeric(pax.last_name), keep_alphanumeric(pax.given_names),
         ]

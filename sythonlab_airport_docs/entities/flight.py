@@ -1,13 +1,16 @@
 import datetime
+from typing import Union
+
+from .flight_type import FlightType
 
 
 class Flight:
 
-    def __init__(self, flight_number: str, flight_type: str, departure_airport_code: str, arrival_airport_code: str,
-                 local_departure_date: str, local_arrival_date: str, local_departure_time: str,
+    def __init__(self, flight_number: str, flight_type: Union[FlightType, str], departure_airport_code: str,
+                 arrival_airport_code: str, local_departure_date: str, local_arrival_date: str, local_departure_time: str,
                  local_arrival_time: str, airline_code: str):
         self.flight_number = flight_number
-        self.flight_type = flight_type
+        self.flight_type = FlightType(flight_type)
         self.departure_airport_code = departure_airport_code
         self.arrival_airport_code = arrival_airport_code
         self.airline_code = airline_code

@@ -2,7 +2,7 @@ import datetime
 import io
 from typing import List
 
-from .normalize import format_date, document_type_code
+from .normalize import format_date
 from .entities import ContactInfo
 from .entities import Pax
 from .entities import Flight
@@ -49,13 +49,13 @@ class API:
 
             self.lines += [
                 f"NAD+FL+++{name}'",
-                f"ATT+2++{pax.gender}'",
+                f"ATT+2++{pax.gender.code if pax.gender else ''}'",
                 f"DTM+329:{format_date(pax.birth_date, '%y%m%d')}'",
                 f"LOC+178+{pax.origin_code}'",
                 f"LOC+179+{pax.destination_code}'",
                 f"NAT+2+{pax.nationality_code}'",
                 f"RFF+AVF:{pax.reservation_code}'",
-                f"DOC+{document_type_code(pax.document_type)}:110:111+{pax.document_number}'",
+                f"DOC+{pax.document_type.code if pax.document_type else ''}:110:111+{pax.document_number}'",
                 f"DTM+36:{format_date(pax.document_expiry_date, '%y%m%d')}'",
                 f"LOC+91+{pax.document_issuer_code}'"
             ]

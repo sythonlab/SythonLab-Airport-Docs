@@ -4,3 +4,8 @@ from .pet import Pet
 from .pax import Pax
 from .special_service import SpecialService
 from .cabin_class import CabinClass
+from .gender import Gender
+from .document_type import DocumentType
+from .pet_transport import PetTransport
+from .pet_animal import PetAnimal
+from .flight_type import FlightType

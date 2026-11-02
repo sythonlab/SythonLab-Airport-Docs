@@ -2,6 +2,8 @@ import datetime
 from typing import List, Optional, Tuple, Union
 
 from .cabin_class import CabinClass
+from .document_type import DocumentType
+from .gender import Gender
 from .pet import Pet
 from .special_service import SpecialService
 
@@ -25,7 +27,8 @@ class Pax:
     A passenger of the flight. No value is required: a missing one leaves its place empty in the documents (`//`).
     `reservation_code` is the booking locator; `ticket_number` / `ticket_coupon` its electronic ticket and the coupon of
     this flight in it (not added when the ticket number already ends in it, `.../2`); `title` (MR, MRS, MS...) is
-    appended to its name record; `flight_class` its booked CabinClass (or its value), none when unknown.
+    appended to its name record; `gender` a Gender, `document_type` a DocumentType and `flight_class` its booked CabinClass (each or its value,
+    none when unknown).
     An infant travels on the lap of an adult: give it as the `infant` of that adult (and it still goes in the pax
     list, the API lists every passenger).
     Services of the PNL: `checked_bags` / `checked_bags_weight` (kg) its hold baggage (XBAG), `pets` (AVIH / PETC),
@@ -33,17 +36,19 @@ class Pax:
     (or its value) or a (SpecialService, text) pair, and `checkin_remark` a note for the check-in staff (CKIN).
     """
 
-    def __init__(self, first_name: str, second_name: Optional[str], last_name: str, gender: str, birth_date: str,
-                 nationality_code: str, document_type: str, document_number: str, document_expiry_date: str,
-                 document_issuer_code: str, flight_class: Union[CabinClass, str, None], origin_code: str, destination_code: str,
-                 reservation_code: str, ticket_number: str = '', ticket_coupon: int = 1, title: str = '',
-                 infant: Optional['Pax'] = None, checked_bags: int = 0, checked_bags_weight: float = 0,
-                 pets: Optional[List[Pet]] = None, vegetarian_meal: bool = False,
-                 special_services: Optional[List[Union[SpecialService, str, Tuple[Union[SpecialService, str], str]]]] = None, checkin_remark: str = ''):
+    def __init__(self, first_name: str, second_name: Optional[str], last_name: str,
+                 gender: Union[Gender, str, None], birth_date: str, nationality_code: str,
+                 document_type: Union[DocumentType, str, None], document_number: str, document_expiry_date: str,
+                 document_issuer_code: str, flight_class: Union[CabinClass, str, None], origin_code: str,
+                 destination_code: str, reservation_code: str, ticket_number: str = '', ticket_coupon: int = 1,
+                 title: str = '', infant: Optional['Pax'] = None, checked_bags: int = 0,
+                 checked_bags_weight: float = 0, pets: Optional[List[Pet]] = None, vegetarian_meal: bool = False,
+                 special_services: Optional[List[Union[SpecialService, str, Tuple[Union[SpecialService, str], str]]]] = None,
+                 checkin_remark: str = ''):
         self.first_name = clean(first_name)
         self.second_name = clean(second_name)
         self.last_name = clean(last_name)
-        self.gender = clean(gender)
+        self.gender = Gender(gender) if gender else None
         self.reservation_code = clean(reservation_code)
         self.ticket_number = clean(ticket_number)
         self.ticket_coupon = ticket_coupon
@@ -52,7 +57,7 @@ class Pax:
         self.birth_date = parse_date(birth_date, 'Birth date')
         self.document_expiry_date = parse_date(document_expiry_date, 'Document expiry date')
         self.nationality_code = clean(nationality_code)
-        self.document_type = clean(document_type)
+        self.document_type = DocumentType(document_type) if document_type else None
         self.document_number = clean(document_number)
         self.document_issuer_code = clean(document_issuer_code)
         self.flight_class = CabinClass(flight_class) if flight_class else None
@@ -71,9 +76,6 @@ class Pax:
 
     def validate(self):
         """Only the values given: a missing one is allowed"""
-        if self.gender and self.gender not in ['M', 'F']:
-            raise ValueError('Gender must be "M" or "F"')
-
         for label, code in (('Nationality code', self.nationality_code),
                             ('Document issuer country code', self.document_issuer_code),
                             ('Origin code', self.origin_code), ('Destination code', self.destination_code)):
