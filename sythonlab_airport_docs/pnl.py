@@ -110,8 +110,8 @@ class PNL:
             lines += self.split(f'.R/{pet.code} HK1 {self.get_pet_text(pet)}')
         if pax.vegetarian_meal:
             lines.append('.R/VGML HK1')
-        for code, text in pax.special_services:
-            lines += self.split(f'.R/{code} HK1 {keep_alphanumeric(text).upper()}'.rstrip())
+        for service, text in pax.special_services:
+            lines += self.split(f'.R/{service.code} HK1 {keep_alphanumeric(text).upper()}'.rstrip())
         if pax.checkin_remark:
             lines += self.split(f'.R/CKIN {keep_alphanumeric(pax.checkin_remark).upper()}')
         return lines
