@@ -1,6 +1,7 @@
 import datetime
 from typing import List, Optional, Tuple, Union
 
+from .cabin_class import CabinClass
 from .pet import Pet
 from .special_service import SpecialService
 
@@ -24,7 +25,7 @@ class Pax:
     A passenger of the flight. No value is required: a missing one leaves its place empty in the documents (`//`).
     `reservation_code` is the booking locator; `ticket_number` / `ticket_coupon` its electronic ticket and the coupon of
     this flight in it (not added when the ticket number already ends in it, `.../2`); `title` (MR, MRS, MS...) is
-    appended to its name record; `flight_class` the PNL code of its booked class (Y, C, F...).
+    appended to its name record; `flight_class` its booked CabinClass (or its value), none when unknown.
     An infant travels on the lap of an adult: give it as the `infant` of that adult (and it still goes in the pax
     list, the API lists every passenger).
     Services of the PNL: `checked_bags` / `checked_bags_weight` (kg) its hold baggage (XBAG), `pets` (AVIH / PETC),
@@ -34,7 +35,7 @@ class Pax:
 
     def __init__(self, first_name: str, second_name: Optional[str], last_name: str, gender: str, birth_date: str,
                  nationality_code: str, document_type: str, document_number: str, document_expiry_date: str,
-                 document_issuer_code: str, flight_class: str, origin_code: str, destination_code: str,
+                 document_issuer_code: str, flight_class: Union[CabinClass, str, None], origin_code: str, destination_code: str,
                  reservation_code: str, ticket_number: str = '', ticket_coupon: int = 1, title: str = '',
                  infant: Optional['Pax'] = None, checked_bags: int = 0, checked_bags_weight: float = 0,
                  pets: Optional[List[Pet]] = None, vegetarian_meal: bool = False,
@@ -54,7 +55,7 @@ class Pax:
         self.document_type = clean(document_type)
         self.document_number = clean(document_number)
         self.document_issuer_code = clean(document_issuer_code)
-        self.flight_class = clean(flight_class)
+        self.flight_class = CabinClass(flight_class) if flight_class else None
         self.origin_code = clean(origin_code)
         self.destination_code = clean(destination_code)
         self.checked_bags = checked_bags or 0

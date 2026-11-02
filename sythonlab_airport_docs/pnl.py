@@ -69,7 +69,7 @@ class PNL:
         # A destination line per booked class (-HAV002Y), followed by its passengers
         classes = defaultdict(list)
         for pax in pax_list:
-            classes[pax.flight_class].append(pax)
+            classes[pax.flight_class.code if pax.flight_class else ''].append(pax)
         for flight_class, class_pax in classes.items():
             part.append(f'-{destination_code}{str(len(class_pax)).zfill(3)}{flight_class}')
             for pax in class_pax:
