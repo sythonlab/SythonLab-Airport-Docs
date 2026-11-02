@@ -118,12 +118,13 @@ class PNL:
 
     @staticmethod
     def get_pet_text(pet):
-        """ANIMAL/LENGTHxWIDTHxHEIGHTCM WEIGHTKG/COMMENT, each missing value an empty place"""
+        """ANIMAL/LENGTHxWIDTHxHEIGHTCM WEIGHTKG/COMMENT, an empty place in the middle, none at the end"""
         sizes = [number(size) for size in (pet.length, pet.width, pet.height)]
         dimensions = f'{"X".join(sizes)}CM' if all(sizes) else ''
         weight = f'{number(pet.weight)}KG' if number(pet.weight) else ''
-        return f'{pet.animal_code}/{" ".join(filter(None, [dimensions, weight]))}/' \
-               f'{keep_alphanumeric(pet.remark)}'
+        # The empty places at the end are left out: no `/` closes the line
+        text = f'{pet.animal_code}/{" ".join(filter(None, [dimensions, weight]))}/{keep_alphanumeric(pet.remark)}'
+        return text.rstrip('/')
 
     @staticmethod
     def get_name(pax):
