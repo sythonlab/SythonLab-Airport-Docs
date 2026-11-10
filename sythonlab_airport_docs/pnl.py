@@ -53,31 +53,28 @@ class PNL:
         return [pax for pax in self.pax_list if id(pax) not in infants]
 
     def generate(self):
+        # The PNL is of the boarding point: one part with every destination of the flight, each under its own
+        # destination line (-SDQ094Y ... -SKB007Y ...)
         grouped = self.get_grouped()
-        self.lines = [self.prefix]
-        for part_number, (destination_code, pax_list) in enumerate(grouped.items(), start=1):
-            self.lines += self.get_part(part_number, destination_code, pax_list, total_parts=len(grouped))
+        self.lines = [self.prefix, self.get_flight_header(1)]
+        for destination_code, pax_list in grouped.items():
+            self.lines += self.get_destination_lines(destination_code, pax_list)
         if not grouped:
             # Nobody boards at this point (e.g. the stopover of a flight whose passengers all boarded before)
-            self.lines += [self.get_flight_header(1), 'NIL']
+            self.lines.append('NIL')
         self.lines.append(f'END{self.prefix}')
 
-    def get_part(self, part_number, destination_code, pax_list, *, total_parts=None):
-        part = [] if part_number == 1 else ['']
-        part.append(self.get_flight_header(part_number))
-
-        # A destination line per booked class (-HAV002Y), followed by its passengers
+    def get_destination_lines(self, destination_code, pax_list):
+        """A destination line per booked class (-HAV002Y), each followed by its passengers"""
+        lines = []
         classes = defaultdict(list)
         for pax in pax_list:
             classes[pax.flight_class.code if pax.flight_class else ''].append(pax)
         for flight_class, class_pax in classes.items():
-            part.append(f'-{destination_code}{str(len(class_pax)).zfill(3)}{flight_class}')
+            lines.append(f'-{destination_code}{str(len(class_pax)).zfill(3)}{flight_class}')
             for pax in class_pax:
-                part += self.get_pax_lines(pax)
-
-        if total_parts and total_parts > 1:
-            part.append(f'ENDPART{part_number}')
-        return part
+                lines += self.get_pax_lines(pax)
+        return lines
 
     def get_flight_header(self, index):
         departure_date = short_date_without_year(self.flight.local_departure_date)
