@@ -5,12 +5,19 @@ from sythonlab_airport_docs.entities import ContactInfo, Flight, Pax, Pet
 from sythonlab_airport_docs.pnl import PNL
 
 CONTACT = ContactInfo('AGENCY', '1', 'a@b.c', 'AG')
-FLIGHT = Flight('CP123', 'C', 'KIN', 'HAV', '2026-11-10', '2026-11-10', '10:00', '11:00', 'CP')
+FLIGHT = Flight('CP123', 'charter', 'KIN', 'HAV', '2026-11-10', '2026-11-10', '10:00', '11:00', 'CP')
 
 
-def pax(first, second, last, gender, birth, document, number, expiry, locator, ticket='', **kwargs):
-    return Pax(first, second, last, gender, birth, 'CUB', document, number, expiry, 'CUB', kwargs.pop('cls', 'Y'),
-               'KIN', 'HAV', locator, ticket, **kwargs)
+# The examples of the specification write the letters: the library takes the enums
+GENDERS = {'M': 'male', 'F': 'female'}
+DOCUMENTS = {'P': 'passport', 'PASSPORT': 'passport', 'I': 'identity_card', 'NI': 'identity_card'}
+CLASSES = {'Y': 'economy', 'C': 'business'}
+
+
+def pax(first, second, last, gender, birth, document, number, expiry, locator, ticket='', destination='HAV',
+        **kwargs):
+    return Pax(first, second, last, GENDERS.get(gender, gender), birth, 'CUB', DOCUMENTS.get(document, document),
+               number, expiry, 'CUB', CLASSES[kwargs.pop('cls', 'Y')], 'KIN', destination, locator, ticket, **kwargs)
 
 
 def lines(*pax_list):
@@ -40,10 +47,11 @@ class PNLTest(unittest.TestCase):
     def test_services(self):
         entry = pax('CLARA', '', 'STEINEBACH', 'F', '2020-12-11', 'PASSPORT', 'C3JWXZGNT', '2030-01-14', 'YJI7NF',
                     '1362401116722', checked_bags=2, checked_bags_weight=46.0, vegetarian_meal=True,
-                    special_services=['WCHR', ('DPNA', 'Needs help to the gate')],
+                    special_services=['wheelchair_ramp', ('unaccompanied_disabled', 'Needs help to the gate')],
                     checkin_remark='Pax carries baby stroller',
-                    pets=[Pet('hold', 'dog', 20, 30, 25, 50, 'comentario'), Pet('cabin', 'cat'),
-                          Pet('cabin', 'other', 4), Pet('hold', 'Crocodile', 40, 150, 45, 35, 'bites')])
+                    pets=[Pet('hold', 'dog', weight=20, length=30, width=25, height=50, comment='comentario'),
+                          Pet('cabin', 'cat'), Pet('cabin', 'other', weight=4),
+                          Pet('hold', 'other', 'Crocodile', 40, 150, 45, 35, 'bites')])
         # A pet that is not a dog or a cat goes as OTH, with its name before the comment
         self.assertEqual(lines(entry)[-13:-1], [
             '.R/CHLD HK1 11DEC20',
@@ -51,8 +59,8 @@ class PNLTest(unittest.TestCase):
             '.RN/RA',
             '.R/XBAG HK1 TTL 46KG 2PC',
             '.R/AVIH HK1 DOG/30X25X50CM 20KG/COMENTARIO',
-            '.R/PETC HK1 CAT//',
-            '.R/PETC HK1 OTH/4KG/',
+            '.R/PETC HK1 CAT',
+            '.R/PETC HK1 OTH/4KG',
             '.R/AVIH HK1 OTH/150X45X35CM 40KG/CROCODILE BITES',
             '.R/VGML HK1',
             '.R/WCHR HK1',
@@ -77,13 +85,15 @@ class PNLTest(unittest.TestCase):
     def test_nobody_boarding(self):
         self.assertEqual(lines(), ['PNL', 'CP123/10NOV KIN PART1', 'NIL', 'ENDPNL'])
 
-    def test_a_part_per_destination(self):
+    def test_every_destination_in_the_one_part_of_the_origin(self):
         to_hav = pax('A', '', 'ONE', 'M', '1990-01-01', 'P', 'X1', '2030-01-01', '1')
-        to_geo = Pax('B', '', 'TWO', 'M', '1990-01-01', 'CUB', 'P', 'X2', '2030-01-01', 'CUB', 'Y', 'KIN', 'GEO', '2')
-        content = lines(to_hav, to_geo)
-        self.assertEqual([line for line in content if line.startswith(('-', 'ENDPART')) or 'PART' in line],
-                         ['CP123/10NOV KIN PART1', '-HAV001Y', 'ENDPART1', 'CP123/10NOV KIN PART2', '-GEO001Y',
-                          'ENDPART2'])
+        to_geo = pax('B', '', 'TWO', 'M', '1990-01-01', 'P', 'X2', '2030-01-01', '2', destination='GEO')
+        other_to_hav = pax('C', '', 'THREE', 'M', '1990-01-01', 'P', 'X3', '2030-01-01', '3')
+        content = lines(to_hav, to_geo, other_to_hav)
+        self.assertEqual([line for line in content if line.startswith('-') or 'PART' in line or line.startswith('END')],
+                         ['CP123/10NOV KIN PART1', '-HAV002Y', '-GEO001Y', 'ENDPNL'])
+        # Each destination line is followed by its own passengers
+        self.assertEqual(content[content.index('-GEO001Y') + 1], '1TWO/B')
 
     def test_a_destination_line_per_class(self):
         economy = pax('A', '', 'ONE', 'M', '1990-01-01', 'P', 'X1', '2030-01-01', '1')
